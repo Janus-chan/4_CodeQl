@@ -1,0 +1,7 @@
+# .github/codeql/custom-queries/javascript/codeql-pack.yml
+
+name: custom/javascript-queries
+version: 0.0.1
+library: false
+dependencies:
+  codeql/javascript-all: "*"
