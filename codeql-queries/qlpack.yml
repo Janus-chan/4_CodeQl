@@ -1,0 +1,6 @@
+name: my-org/my-custom-codeql-queries
+version: 0.0.1
+dependencies:
+  codeql/javascript-all: "*"
+library: true
+extractor: javascript
