@@ -9,7 +9,7 @@ app.use(express.json());
 function maskPassword(password) {
     if (typeof password !== 'string') return '';
     return '*'.repeat(password.length);
-}
+} 
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
