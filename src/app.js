@@ -6,19 +6,19 @@ const _ = require('lodash');
 const app = express();
 app.use(express.json());
 
-// function maskPassword(password) {
-//     if (typeof password !== 'string') return '';
-//     return '*'.repeat(password.length);
-// }
+function maskPassword(password) {
+    if (typeof password !== 'string') return '';
+    return '*'.repeat(password.length);
+}
 
-// app.post('/login', (req, res) => {
-//     const { username, password } = req.body;
-//     console.log('Received login attempt:', username, maskPassword(password));
-//     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-//     // This is vulnerable to SQL injection
-//     console.log('Executing query:', query);
-//     res.json({ message: 'Login attempt logged' });
-// });
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    console.log('Received login attempt:', username, maskPassword(password));
+    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+    // This is vulnerable to SQL injection
+    console.log('Executing query:', query);
+    res.json({ message: 'Login attempt logged' });
+});
 
 // Vulnerability 2: Hardcoded secrets
 const API_KEY = "sk-1234567890abcdef";
