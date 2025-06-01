@@ -40,6 +40,7 @@ app.post('/merge', (req, res) => {
 
 app.get('/getCreditCardDetails', (req, res) => {
     const cardId = req.query.id;
+    //printing the card id
     console.log('Received card Id:', cardId);
     // Vulnerable: user input directly in SQL query
     const query = `SELECT * FROM users WHERE cardId = '${cardId}' '`;
