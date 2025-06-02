@@ -41,7 +41,7 @@ jobs:
         languages: ${{ matrix.language }}
         # Include default CodeQL queries AND your custom ones
         # queries:  +.github/codeql/custom-queries/javascript
-        queries: ./codeql-queries
+        queries: ./custom-queries
         # queries: security-extended,security-and-quality
 
     - name: Autobuild
