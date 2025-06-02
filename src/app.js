@@ -14,9 +14,9 @@ function maskPassword(password) {
 app.post('/login', (req, res) => {
     
     const { username, password } = req.body;
-    
+
     let mPassword = maskPassword(password);
-    console.log('Received login attempt:', username, mPassword);
+    console.log('Received  login :', username, mPassword);
     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
     // This is vulnerable to SQL injection
     console.log('Executing query:', query);
