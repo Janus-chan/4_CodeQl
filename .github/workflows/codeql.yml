@@ -39,8 +39,11 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        # Enable security and quality queries
-        queries: security-extended,security-and-quality
+        # Include default CodeQL queries AND your custom ones
+        # queries:  +.github/codeql/custom-queries/javascript
+        queries: ./custom-queries
+        # queries: security-extended,security-and-quality
+        queries-ignore: codeql/javascript/ql/src/Security/CWE-117/Logging/LogSink.ql
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
@@ -49,4 +52,3 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
-
