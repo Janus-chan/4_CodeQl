@@ -1,61 +1,79 @@
 /**
- * @name Detect plain-text password usage
- * @kind path-problem
- * @id js/plaintext-password
+ * @name Detect Plain-text Password Assignments
+ * @description Detects assignments of plain-text passwords in JavaScript/Node.js code, avoiding masked or hashed outputs.
+ * @kind problem
  * @problem.severity warning
+ * @id js/plaintext-password-detected
  * @tags security
+ *       external/cwe/cwe-312
  */
 
 import javascript
-import semmle.javascript.security.dataflow.TaintTracking
-import DataFlow::PathGraph
+import semmle.javascript.security.dataflow.DataFlow
+import semmle.codeql.suppressions.Suppressions
 
-// 1) Identify password-like names (password, pwd, secret)
-predicate isPasswordLike(string name) {
-  name.toLowerCase().matches("%password%") or
-  name.toLowerCase().matches("%pwd%") or
-  name.toLowerCase().matches("%secret%")
+/**
+ * Predicate to check if the identifier looks like a password.
+ */
+predicate isPasswordLikeName(string name) {
+  name.toLowerCase().regexpMatch(".*(password|pwd|secret).*")
 }
 
-// 2) Identify masking functions by name
-predicate isMaskingFunction(Function f) {
-  f.getName().matches("%mask%") or
-  f.getName().matches("%hash%") or
-  f.getName().matches("%encrypt%")
+/**
+ * Predicate to match common masking function names.
+ */
+predicate isMaskingFunctionName(string name) {
+  name.toLowerCase().regexpMatch(".*(mask|hash|encrypt).*")
 }
 
-// 3) Check for inline suppression comment: // codeql[no-password]
-predicate isSuppressed(Node n) {
-  n.getLocation().hasCommentMatching("%codeql[no-password]%")
+/**
+ * Predicate to identify known hash/base64 patterns.
+ */
+predicate looksLikeHashedOrBase64(string val) {
+  val.regexpMatch("^[a-fA-F0-9]{32,64}$") or
+  val.regexpMatch("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 }
 
-// 4) Taint-tracking config: track from user input → sink
-class PasswordFlowConfig extends TaintTracking::Configuration {
-  PasswordFlowConfig() { this = "PasswordFlowConfig" }
-
-  override predicate isSource(Node source) {
-    // Any expression referencing req.body.* or a getInput(...) call
-    source instanceof Expr and source.getText().matches("%req.body.%")
-    or
-    source instanceof CallExpression and source.getCallee().getName().matches("getInput")
-  }
-
-  override predicate isSink(Node sink) {
-    // If the RHS of an assignment feeds into a variable whose name is "password", "pwd", or "secret"
-    exists(Variable v |
-      isPasswordLike(v.getName()) and
-      sink = v.getAnAssignment().getRhs()
+/**
+ * Tracks masking functions like maskPassword()
+ */
+class MaskingFunctionCall extends FunctionCall {
+  MaskingFunctionCall() {
+    exists(Function f |
+      this.getCallee() = f.getName() and
+      isMaskingFunctionName(f.getName())
     )
   }
 }
 
-// 5) Find any flow from source → sink, unless it’s masked or suppressed
-from PasswordFlowConfig cfg, Node source, Node sink
-where cfg.hasFlow(source, sink)
-  and not exists(CallExpression call |
-    isMaskingFunction(call.getCallee()) and
-    call.getArgument(0) = sink
-  )
-  and not sink.getLocation().getFile().getBaseName().matches("%test%")
-  and not isSuppressed(sink)
-select sink, source, "Possible use of plain-text password without masking."
+/**
+ * Source: User-controlled or potentially sensitive input
+ */
+class Source extends DataFlow::SourceNode {
+  Source() { this instanceof DataFlow::ParameterNode }
+}
+
+/**
+ * Sink: Assignment to a variable with "password", "pwd", or "secret" in the name
+ */
+class Sink extends DataFlow::SinkNode {
+  Sink() {
+    exists(Variable v |
+      v.getName() = name and
+      isPasswordLikeName(name) and
+      this.asExpr() = v.getAnAccess()
+    )
+  }
+}
+
+/**
+ * Path from source to sink not masked by a masking function.
+ */
+from Source src, Sink sink, DataFlow::PathNode path
+where DataFlow::localFlowPath(src, sink, path) and
+      not exists(MaskingFunctionCall call |
+        call.getArgument(0) = path.getNode().asExpr()
+      ) and
+      not looksLikeHashedOrBase64(path.getNode().asExpr().toString()) and
+      not Suppressions::hasSuppression(path.getNode().getNode(), "no-password")
+select sink.getNode(), "Possible plain-text password assignment."
