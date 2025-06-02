@@ -15,7 +15,6 @@ app.post('/login', (req, res) => {
     
     const { username, password } = req.body;
     let mPassword = maskPassword(password);
-    // codeql[js/clear-text-logging]: This is intentionally masked password
     console.log('Received login attempt:', username, mPassword);
     const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
     // This is vulnerable to SQL injection
