@@ -1,0 +1,9 @@
+paths-ignore:
+  - '**/node_modules'
+  - '**/*.test.js'
+query-filters:
+  - exclude:
+      id: js/clear-text-logging
+      path: src/app.js
+      source:
+        - src/app.js:20
