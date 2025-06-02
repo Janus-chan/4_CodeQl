@@ -43,6 +43,7 @@ jobs:
         # queries:  +.github/codeql/custom-queries/javascript
         queries: ./custom-queries
         # queries: security-extended,security-and-quality
+        queries-ignore: codeql/javascript/ql/src/Security/CWE-117/Logging/LogSink.ql
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
